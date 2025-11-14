@@ -7,14 +7,39 @@ output: github_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(rvest)
+library(ggplot2)
+set.seed(1)
 ```
 # Problem 1
 
 Suppose you put 𝑛 people in a room, and want to know the probability that at least two people share a birthday. For simplicity, we’ll assume there are no leap years (i.e. there are only 365 days) and that birthdays are uniformly distributed over the year (which is actually not the case).
 
 Write a function that, for a fixed group size, randomly draws “birthdays” for each person; checks whether there are duplicate birthdays in the group; and returns TRUE or FALSE based on the result.
+```{r birth_function}
+birthday = function(x) {
+  birthdays = sample(1:365, x, replace = TRUE) #select bdays (equal distribution), allow for repeats
+  return(any(duplicated(birthdays))) #true if there are any repeated bdays
+}
+```
 
 Next, run this function 10000 times for each group size between 2 and 50. For each group size, compute the probability that at least two people in the group will share a birthday by averaging across the 10000 simulation runs. Make a plot showing the probability as a function of group size, and comment on your results.
+```{r birth_sim}
+n = 2:50
+probabilities = tibble(
+  group_size = 2:50,
+  probability = sapply(n, function(n) {
+  mean(replicate(10000, birthday(n)))
+}) 
+)
+
+probabilities %>% 
+ggplot(aes(x=group_size, y=probability)) + 
+  geom_bar(stat = "identity")
+
+```
+The probability of two people sharing a birthday increases as the number of people increases. It goes over 50% around 23 people, and the probability is over 90% at 40 people.
 
 # Problem 2
 
@@ -27,6 +52,24 @@ Fix 𝜎=5
 Set 𝜇=0. Generate 5000 datasets from the model
 
 𝑥∼𝑁𝑜𝑟𝑚𝑎𝑙[𝜇,𝜎]
+```{r setup_p2}
+sim_mean_sd = function(n = 30, mu = 0, sigma = 5) {
+  
+  sample = rnorm(n, mean = mu, sd = sigma)
+  
+   t.test(sample, mu = mu) %>% 
+     broom::tidy
+}
+
+output = vector("list", 5000)
+
+for (i in 1:5000) {
+  output[[i]] = sim_mean_sd(0)
+}
+
+sim_results = bind_rows(output)
+```
+
 
 For each dataset, save 𝜇̂ and the p-value arising from a test of 𝐻:𝜇=0 using 𝛼=0.05. Hint: to obtain the estimate and p-value, use broom::tidy to clean the output of t.test.
 
@@ -35,7 +78,7 @@ Repeat the above for 𝜇={1,2,3,4,5,6}, and complete the following:
 Make a plot showing the proportion of times the null was rejected (the power of the test) on the y axis and the true value of 𝜇 on the x axis. Describe the association between effect size and power.
 Make a plot showing the average estimate of 𝜇̂ on the y axis and the true value of 𝜇 on the x axis. Make a second plot (or overlay on the first) the average estimate of 𝜇̂ only in samples for which the null was rejected on the y axis and the true value of 𝜇 on the x axis. Is the sample average of 𝜇̂ across tests for which the null is rejected approximately equal to the true value of 𝜇? Why or why not?
 
-#Problem 3
+# Problem 3
 
 The Washington Post has gathered data on homicides in 50 large U.S. cities and made the data available through a GitHub repository here. You can read their accompanying article here.
 
