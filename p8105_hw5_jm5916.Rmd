@@ -24,7 +24,7 @@ birthday(5)
 ```
 
 ### Simulate groups and plot
-```{r birth_sim}
+```{r birth_sim, fig.height = 6, fig.width = 10}
 #Simulation
 probabilities <- tibble(
   group_size = 2:50,
@@ -35,6 +35,8 @@ probabilities <- tibble(
 probabilities %>% 
 ggplot(aes(x=group_size, y=probability)) + 
   geom_bar(stat = "identity", fill = "thistle3") +
+  scale_x_continuous(limits = c(0, 50), 
+                     breaks = seq(0, 50, by = 5)) +
   labs(title = "Birthday Groups",
        x = "Number of people in group",
        y = "Probability of shared birthday") +
@@ -80,7 +82,7 @@ for(mu in mu_values) { #using a for loop this time to practice
 ```
 
 ### Power Plot
-```{r null_plot}
+```{r null_plot, fig.height = 6, fig.width = 8}
 #combine results into one df for plots
 sim_results_all = bind_rows(sim_results_list, .id = "mu")
 
@@ -93,6 +95,8 @@ power = sim_results_all %>%
   ggplot(aes(x = as.numeric(mu), y = power)) +
   geom_line() +
   geom_point() +
+  scale_x_continuous(limits = c(0, 6), 
+                     breaks = seq(0, 6, by = 1)) +
   labs(title = "Power of Test",
        x = "True value of μ",
        y = "Proportion of p-value < 0.05") +
@@ -104,7 +108,7 @@ power
 Proportion of p-value < 0.05, or power, increases as the true value of μ increases, this suggests that power increases with effect size assuming that sample size and sd remain constant. 
 
 ### Estimate Plot
-```{r est_plot}
+```{r est_plot, fig.height = 6, fig.width = 8}
 estimate <- sim_results_all %>%
   group_by(mu) %>%
   summarise(
@@ -115,15 +119,15 @@ estimate <- sim_results_all %>%
   ggplot(aes(x = as.numeric(mu))) +
   geom_line(aes(y = av_est, color = "All")) + 
   geom_point(aes(y = av_est, color = "All"), shape = "circle") +
-  geom_line(aes(y = av_null_est, color = "Only null rejected")) + #overlaying plots
-  geom_point(aes(y = av_null_est, color = "Only null rejected"), shape = "square") +
+  geom_line(aes(y = av_null_est, color = "Only where null was rejected")) + #overlaying plots
+  geom_point(aes(y = av_null_est, color = "Only where null was rejected"), shape = "square") +
   labs(
     title = "Estimate to True μ",
     x = "True value of μ",
     y = "Average estimate of μ",
     color = "Tests included"
   ) +
-  scale_color_manual(values = c("All" = "sienna2", "Only null rejected" = "chartreuse4")) + 
+  scale_color_manual(values = c("All" = "sienna2", "Only where null was rejected" = "chartreuse4")) + 
   theme_minimal()
 
 estimate
@@ -163,15 +167,15 @@ baltimore_hom = city_state_hom %>%
   filter(city_state == "Baltimore, MD")
 
 baltimore_hom_test = 
-  prop.test(x = pull(baltimore_hom, unsolved),
+  prop.test(x = pull(baltimore_hom, unsolved), #run prop test
           n = pull(baltimore_hom, total_hom)) %>% 
-  broom::tidy() %>% 
-  select(estimate, conf.low, conf.high)
+  broom::tidy() %>% #tidy output
+  select(estimate, conf.low, conf.high) #only want estimated proportions and CIs
 
 baltimore_hom_test
-  
-# estimated proportion of unsolved homicides = 0.65 (95% CI: 0.63, 0.66)
 ```
+
+Estimated proportion of unsolved homicides in Baltimore, MD = 0.65 (95% CI: 0.63, 0.66)
 
 ### Estimated proportion of unsolved cases for all cities
 ```{r all_cities_proptest}
@@ -186,7 +190,7 @@ head(city_prop)
 ```
 
 #### Plot
-```{r murder_plot, fig.height = 12, fig.width = 9}
+```{r murder_plot, fig.height = 11, fig.width = 8}
 city_prop %>% 
   arrange(estimate) %>% 
   mutate(city_state = fct_inorder(city_state)) %>% 
